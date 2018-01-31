@@ -1,9 +1,9 @@
 # HeadLight with ATtiny13 core
 #### Vexilurz (c)
 This repository for create flashlight using ATtiny13 (DIY).
-* Idea from: `[https://geektimes.ru/post/255004/](https://geektimes.ru/post/255004/)`
-* For ATtiny13 support in Arduino IDE: `[https://github.com/MCUdude/MicroCore](https://github.com/MCUdude/MicroCore)`
-* Library for interrupts support: `[https://github.com/NicoHood/PinChangeInterrupt](https://github.com/NicoHood/PinChangeInterrupt)`
+* Idea from: [https://geektimes.ru/post/255004/](https://geektimes.ru/post/255004/)
+* For ATtiny13 support in Arduino IDE: [https://github.com/MCUdude/MicroCore](https://github.com/MCUdude/MicroCore)
+* Library for interrupts support: [https://github.com/NicoHood/PinChangeInterrupt](https://github.com/NicoHood/PinChangeInterrupt)
 
 ## How to program ATtiny13 via "Arduino as ISP":
 [In Russian](https://drive.google.com/open?id=1-w3zYSKzwpRuDV7iiXSNdWmjPVqMFLKMCIAcvBqBYi4)
