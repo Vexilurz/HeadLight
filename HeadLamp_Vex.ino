@@ -6,7 +6,7 @@
  * 
  * One fast click - turn the light on the maximum
  * One more fast click - turn the light off
- * Click and hold - slowly rise the brightness
+ * Click and hold - slowly rise the Brightness
  * 
  * Idea from:                           https://geektimes.ru/post/255004/
  * For ATtiny13 support in Arduino IDE: https://github.com/MCUdude/MicroCore
@@ -24,9 +24,12 @@
  *                +----+
 */
 
-// PWM support only PB0 and PB1 (5 and 6 pins on chip)
-const byte ledPin = 1; // PB1 (6 pin on the chip)
-const byte swPin  = 2; // PB2 (7 pin on the chip)
+// PWM support only on PB0 and PB1 (5 and 6 pins on chip)
+const byte LEDpin = 1; // PB1 (6 pin on the chip)
+const byte SWpin  = 2; // PB2 (7 pin on the chip)
+
+// Comment this if you don't want to inverse Brightness logic
+#define BrightInverted
 
 #include <avr/sleep.h> // Library for attiny sleep while headlight is off
 
@@ -41,111 +44,118 @@ const byte swPin  = 2; // PB2 (7 pin on the chip)
 //Delay between click repeat while SW pressed
 #define NEXT_CLICK_MS 40
 
-#define MIN_BRIGHT 255
-#define MAX_BRIGHT 0
+#define MIN_BRIGHT 0   // On this Bright device go to sleep
+#define MAX_BRIGHT 255 // Maximum PWM
 
-#define BRIGHT_INC255 1
-#define BRIGHT_INC200 5
-#define BRIGHT_INC100 10
+// Increments
+#define BRIGHT_INC_SLOW 1
+#define BRIGHT_INC_MID  2
+#define BRIGHT_INC_FAST 4
+
+// After that threshold speed gonna MID increase
+#define BRIGHT_MID_THRESHOLD  64
+// After that threshold speed gonna FAST increase
+#define BRIGHT_FAST_THRESHOLD 128
+
+uint8_t Bright = MIN_BRIGHT;
+uint8_t KeyState = 0;
+uint8_t LastKeyState = 0;
 
 void setup() {  
-  pinMode(ledPin, OUTPUT);
-  pinMode(swPin, INPUT_PULLUP);
-  //GIMSK |= _BV(PCIE); // Enable Pin Change Interrupts
+  pinMode(LEDpin, OUTPUT);
+  pinMode(SWpin, INPUT_PULLUP);  
   MCUCR = ~_BV(SM0) & _BV(SM1); // Select "Power-down" sleep mode
-  attachPCINT(digitalPinToPCINT(swPin), InterruptMethod, FALLING); // Прерывание на кнопку
-  interrupts();
+  // Interrupt on the switch pressed calls InterruptMethod()
+  attachPCINT(digitalPinToPCINT(SWpin), InterruptMethod, FALLING);   
+  //interrupts();
+
+  Bright = MIN_BRIGHT;
+  SetBright();
+  _delay_ms(500);
 }
 
-uint8_t bright = MIN_BRIGHT;
-uint8_t lastkey = 0;
-uint8_t keydown = 0;
-uint8_t wasEvent = LOW; // for "continue" word replace
+void ReadSwitchState() 
+{
+  KeyState = digitalRead(SWpin);
+}
 
 void loop() {
-  keydown = digitalRead(swPin);
-  wasEvent = LOW;
-  
-  if(keydown != lastkey)
-  { //Switch key change state
+  ReadSwitchState();    
+  if(KeyState != LastKeyState)
+  { //Switch key change event
     CheckOneClick();
-    lastkey = keydown;
+    LastKeyState = KeyState;
   }
 
-  if (wasEvent == LOW) // If no switch key change state event:
-  {    
-    if(keydown == LOW) // If switch pressed and holded:
-    {      
-      IncBright();      
-      analogWrite(ledPin, bright);      
-      if(bright == MIN_BRIGHT - BRIGHT_INC255)           
-        _delay_ms(FAST_CLICK_MS); //5.5mA            
-    }  
-    _delay_ms(NEXT_CLICK_MS); //1.64mA
-        
-    //If light is off, goto sleep.
-    if(bright==MIN_BRIGHT)
-    {
-      sleep(); //0.3uA
-    }
-  }
+  if(KeyState == LOW) // If switch pressed and holded:
+  {      
+    IncBright();      
+    SetBright(); 
+  }  
+  
+  _delay_ms(NEXT_CLICK_MS); 
+      
+  // If light is off, goto sleep.
+  if (Bright == MIN_BRIGHT)
+     Sleep();    
 }
 
 // Switch one short click check
 void CheckOneClick()
 {
-  if((bright < MIN_BRIGHT) && (keydown == LOW)) // If light was turned on and button pressed:
-  { 
+  if (KeyState == LOW) // If button pressed:
+  {
     _delay_ms(FAST_CLICK_MS);
-    if(digitalRead(swPin) != LOW) // If after FAST_CLICK_MS switch released
-    { // Turn light off
-      bright = MIN_BRIGHT;
-      analogWrite(ledPin, bright);   
-      wasEvent = HIGH;       
-    }
-  }
-  else if((bright == MIN_BRIGHT) && (keydown == LOW)) // If light was NOT turned on and button pressed:
-  { 
-    _delay_ms(FAST_CLICK_MS);
-    if(digitalRead(swPin) != LOW) // If after FAST_CLICK_MS switch released
-    { // Turn MAX brightness (It was one short click, not holding)
-      bright = MAX_BRIGHT;
-      analogWrite(ledPin, bright);   
-      wasEvent = HIGH;       
+    ReadSwitchState();
+    if(KeyState != LOW) // If after FAST_CLICK_MS switch released
+    {
+      //Change flashlight state (ON/OFF)
+      Bright = (Bright > MIN_BRIGHT) ? MIN_BRIGHT : MAX_BRIGHT;
+      SetBright();          
     }
   }
 }
 
-// Slowly increase brightness
+void SetBright()
+{
+  #ifdef BrightInverted
+    analogWrite(LEDpin, MAX_BRIGHT - Bright);                
+  #else
+    analogWrite(LEDpin, Bright);
+  #endif
+}
+
+// Slowly increase Brightness
 void IncBright()
 {
-  if(bright > MAX_BRIGHT) 
-  { //Increase light until MAX while SW pressed
-    if(bright <= 100)
+  if(Bright < MAX_BRIGHT) 
+  { //Increase light until MAX while switch pressed
+    if      (Bright < BRIGHT_MID_THRESHOLD)
     {
-      if(bright > BRIGHT_INC100)
-        bright -= BRIGHT_INC100;              
-      else
-        bright = MAX_BRIGHT;              
+      Bright += BRIGHT_INC_SLOW;                 
+      _delay_ms(15); // Just slowly when in low Brightless increment zone
     }
-    else if(bright <= 200)
-      bright -= BRIGHT_INC200;             
+    else if (Bright < BRIGHT_FAST_THRESHOLD)
+      Bright += BRIGHT_INC_MID;             
+    else if (MAX_BRIGHT - Bright > BRIGHT_INC_FAST)
+      Bright += BRIGHT_INC_FAST;  
     else
-      bright -= BRIGHT_INC255;             
+      Bright = MAX_BRIGHT;             
   }
 }
 
 void InterruptMethod() { 
-  if (bright == MIN_BRIGHT) // if light is off
+  if (Bright == MIN_BRIGHT) // if light is off
   { // wake up    
     noInterrupts();
     sleep_disable();  
-    interrupts();
+    //interrupts();    
   }
 }
 
-void sleep()
+void Sleep()
 {
+  interrupts();
   sleep_enable();  
   sleep_cpu();
 }
