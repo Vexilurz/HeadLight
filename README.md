@@ -5,6 +5,8 @@ This repository for create flashlight using ATtiny13 (DIY).
 * For ATtiny13 support in Arduino IDE: [https://github.com/MCUdude/MicroCore](https://github.com/MCUdude/MicroCore)
 * Library for interrupts support: [https://github.com/NicoHood/PinChangeInterrupt](https://github.com/NicoHood/PinChangeInterrupt)
 
+<img src="https://habrastorage.org/files/64d/229/621/64d22962193c4e70a197986030ec306a.jpg" width="600">
+
 ## How to program ATtiny13 via "Arduino as ISP":
 [In Russian](https://drive.google.com/open?id=1-w3zYSKzwpRuDV7iiXSNdWmjPVqMFLKMCIAcvBqBYi4)
 * [Install ATtiny13 board support using MicroCore](https://github.com/MCUdude/MicroCore#how-to-install)
