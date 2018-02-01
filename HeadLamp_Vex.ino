@@ -3,11 +3,13 @@
  *   -----------------------
  * e-mail:        vexilurz@gmail.com
  * Create date:   30.01.2018
+ * Last edit:      1.02.2018
  * 
  * One fast click - turn the light on the maximum
  * One more fast click - turn the light off
  * Click and hold - slowly rise the Brightness
  * 
+ * This project github repo:            https://github.com/Vexilurz/HeadLight
  * Idea from:                           https://geektimes.ru/post/255004/
  * For ATtiny13 support in Arduino IDE: https://github.com/MCUdude/MicroCore
  * For interrupts support:              https://github.com/NicoHood/PinChangeInterrupt
@@ -61,10 +63,12 @@ uint8_t Bright = MIN_BRIGHT;
 uint8_t KeyState = 0;
 uint8_t LastKeyState = 0;
 
-void setup() {  
+void setup() 
+{  
   pinMode(LEDpin, OUTPUT);
   pinMode(SWpin, INPUT_PULLUP);  
   MCUCR = ~_BV(SM0) & _BV(SM1); // Select "Power-down" sleep mode
+  ADCSRA &= ~_BV(ADEN); // ADC off
   // Interrupt on the switch pressed calls InterruptMethod()
   attachPCINT(digitalPinToPCINT(SWpin), InterruptMethod, FALLING);   
   //interrupts();
@@ -79,15 +83,16 @@ void ReadSwitchState()
   KeyState = digitalRead(SWpin);
 }
 
-void loop() {
+void loop() 
+{
   ReadSwitchState();    
-  if(KeyState != LastKeyState)
+  if (KeyState != LastKeyState)
   { //Switch key change event
     CheckOneClick();
     LastKeyState = KeyState;
   }
 
-  if(KeyState == LOW) // If switch pressed and holded:
+  if (KeyState == LOW) // If switch pressed and holded:
   {      
     IncBright();      
     SetBright(); 
@@ -145,6 +150,7 @@ void IncBright()
 }
 
 void InterruptMethod() { 
+  //TODO: click counter and some stuff around it =)
   if (Bright == MIN_BRIGHT) // if light is off
   { // wake up    
     noInterrupts();

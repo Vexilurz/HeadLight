@@ -24,6 +24,8 @@ This repository for create flashlight using ATtiny13 (DIY).
 * (Don't forget to install [PinChangeInterrupt](https://github.com/NicoHood/PinChangeInterrupt) library for this project!)
 <img src="http://msyst.ru/images/attiny_arduino_connect.png" width="468">
 
+If it don't work - try to pullup RESET pin to the VDD via 10kOhm resistor. You don't need external pullup to the button - ATtiny have internal pullup.
+
 ## ATtiny13 pinout
 This diagram shows the pinout and the peripherals of ATtiny13.
 <b>Click to enlarge:</b> 
